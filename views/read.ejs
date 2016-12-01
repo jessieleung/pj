@@ -2,7 +2,7 @@
 <H1>Resturants</H1>
 <H2>User: <%= userid %></H2>
 <H3>Showing <%= c.length %>documents:</H3>
-<p><a href=/new>New</a></p>
+<p><a href=/create>New</a></p>
 <ol>
   <% c.forEach(function(shop) { %>
   <li><a href=/showdetails?id=<%= shop.id %>><%= shop.name %></a></li>

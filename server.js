@@ -20,8 +20,8 @@ app.set('view engine','ejs');
 app.use(session({
 	name: 'session',
 	keys: [SECRETKEY1,SECRETKEY2],
-	authenticated: false,
-	secret: SECRETKEY1,
+	//authenticated: false,
+	//secret: SECRETKEY1,
 	resave: true,
 	saveUninitialized: true
 }));
@@ -46,6 +46,9 @@ app.get('/login',function(req,res) {
 });
 
 app.get('/create',function(req,res) {
+	if (!req.session.authenticated)	{	//Required Login
+		res.redirect('/login'); 
+	}
 	res.sendFile(__dirname + '/public/form.html');
 });
 
@@ -55,6 +58,7 @@ app.get('/read',function(req,res) {
 		assert.equal(null, err);		
 		findRestaurants(db, function(result){	
 			db.close();
+			console.log(req.session);
 			res.render("read.ejs", {c: result, userid: req.session.userid});
 		});
 	});
@@ -119,7 +123,7 @@ app.get('/logout',function(req,res) {
 app.post('/create', function(req,res){
 	var sampleFile;
 	var bfile = req.files.sampleFile;
-	var criteria = {"name": req.body.name, "cuisine": req.body.cuisine, "borough": req.body.borough, 
+	var criteria = {"name": req.body.name, "cuisine": req.body.cuisine, "borough": req.body.borough, "owner": req.session.userid,
 					"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
 					"address": {"street": req.body.street, "zipcode": req.body.zipcode, "building": req.body.building, "coord": [req.body.lon, req.body.lat]}};
 	MongoClient.connect(mongourl, function(err, db){
