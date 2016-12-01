@@ -40,7 +40,6 @@ app.get('/register',function(req,res) {
 	res.sendFile(__dirname + '/public/register.html');
 });
 
-
 app.get('/login',function(req,res) {
 	res.sendFile(__dirname + '/public/login.html');
 });
