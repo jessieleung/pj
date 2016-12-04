@@ -1,0 +1,30 @@
+
+<html>
+<head>
+<title>Restaurant</title>
+</head>
+<body>
+
+<form action="/change" method="post" encType="multipart/form-data">
+	<h2>Name of restaurant: </h2>
+	
+	<input type="text" name="name" value ="<%= c.name%>" required><br>
+
+	<h2>Address:</h2>
+	Building: <input type="text" name="building" value ="<%= c.address.building%>"><br>
+	Street: <input type="text" name="street" value ="<%= c.address.street%>"><br>
+	Zipcode: <input type="text" name="zipcode" value ="<%=c.address.zipcode %>"><br>
+	<h3>Coordinates:</h3>
+	Longitude: <input type="text" name="lon" value ="<%= c.address.coord.lon%>"><br>
+	Latitude: <input type="text" name="lat" value ="<%= c.address.coord.lat%>"><br>
+
+	<h2>Other Info</h2>
+	Borough: <input type="text" name="borough" value ="<%= c.borough%>"><br>
+	Cuisine: <input type="text" name="cuisine" value ="<%= c.cuisine%>"><br>
+	Photo: <input type='file' name='sampleFile'"><br>
+	<br>
+	<input type="submit" value="Change">
+</form>
+
+</body>
+</html>

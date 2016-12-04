@@ -3,6 +3,7 @@
 var express = require('express');
 var app = express();
 var MongoClient = require('mongodb').MongoClient;
+var ObjectId = require('mongodb').ObjectID;
 var assert = require('assert');
 //var ObjectId = require('mongodb').ObjectID;
 var mongourl = 'mongodb://localhost:27017/test';
@@ -51,6 +52,111 @@ app.get('/create',function(req,res) {
 	res.sendFile(__dirname + '/public/form.html');
 });
 
+
+//---------------------Edit information--------------------------------------------
+app.get('/change', function(req, res){
+var key = req.query.id;
+
+	if (req.query.id != null) {
+		MongoClient.connect(mongourl, function(err, db){
+		assert.equal(null, err);
+	
+		findOwner(db, key, function(result){
+			db.close();
+			console.log(result+">>result");
+			//for (var i=0; i<result.length; i++) {
+      			if (result.owner == req.session.userid) {
+					console.log(result.owner+">>owner");
+					res.sendFile(__dirname + '/public/change.html');
+        			res.render("edit.ejs", {c: result});
+        			//break;
+				}
+				else{
+					res.status(400).end('not a owner');
+				}
+      		//}
+
+
+		});
+
+
+	});
+
+
+  } 
+	else {
+    res.status(500).end('id missing!');
+  }	
+
+});
+
+
+//********************find owner*******************************************
+function findOwner(db,target,callback){
+	db.collection('restaurants').findOne({"_id": ObjectId(target)}, function(err, result){
+		assert.equal(err, null);
+		callback(result);
+	});
+}
+
+
+
+
+
+//------------------Get image--------------------------------------------------
+app.get('/image', function(req,res) {
+var key = req.query.key;
+//console.log('Finding key = ' + req.query.key);
+  MongoClient.connect(mongourl,function(err,db) {
+    console.log('Connected to db, image');
+    
+    assert.equal(null,err);
+    var bfile;
+    var key = req.query.key;
+
+	//console.log(req.query.key);
+    if (key != null) {
+      readImage(db, key, function(bfile,mimetype) {
+        if (bfile != null) {
+			//console.log('bFile: ' + bfile)
+          //console.log('Found: ' + key)
+          res.set('Content-Type',mimetype);
+          res.end(bfile);
+        } else {
+          res.status(404);
+          res.end(key + ' not found!');
+          //console.log(key + ' not found!');
+        }
+        db.close();
+      });
+    } else {
+      res.status(500);
+      res.end('Error: query parameter "key" is missing!');
+    }
+  });
+});
+
+
+
+function readImage(db,target,callback) {
+  var bfile = null;
+  var mimetype = null;
+  db.collection('restaurants').findOne({"_id": ObjectId(target)}, function(err,doc) {
+    assert.equal(err,null);
+	console.log(target +">>target");
+	console.log(doc + ">>doc");
+    if (doc != null) {
+      bfile = new Buffer(doc.photo.data,'base64');
+		console.log(doc.photo.data + "bfile");
+      mimetype = doc.photo.mimetype;
+		//callback(bfile,mimetype);
+    }
+    callback(bfile,mimetype);
+  });
+}
+
+
+
 //----------------List All Restaurants---------------------------------------------
 app.get('/read',function(req,res) {
 	MongoClient.connect(mongourl, function(err, db){
@@ -62,6 +168,125 @@ app.get('/read',function(req,res) {
 		});
 	});
 });
+
+//---------------display detail of restaurants------------------------------
+app.get('/display', function(req,res) {
+	var shop;
+	var rating ="";
+	console.log(req.query.id);
+	var criteria2 = {"_id": req.query.id};	
+	
+	if (req.query.id != null) {
+		MongoClient.connect(mongourl, function(err, db){
+		assert.equal(null, err);
+	
+		findRestaurants(db, function(result){
+			db.close();
+			for (var i=0; i<result.length; i++) {
+      			if (result[i]._id == req.query.id) {
+        			res.render("display.ejs", {c: result[i]});
+        			break;
+				}
+      		}
+
+
+		});
+
+
+	});
+
+
+  } 
+else {
+    res.status(500).end('id missing!');
+  }
+});
+
+//--------------------------Change-------------------------------------------
+/*app.post('/change', function(req, res){
+	var sampleFile;
+	var bfile = req.files.sampleFile;
+	var key = req.query.id;
+	var criteria1 = {"_id": ObjectId(key)};
+	
+	var criteria2 = {$set:{"name": req.body.name, 
+					"cuisine": req.body.cuisine, 
+					"borough": req.body.borough, 
+					"owner": req.session.userid, 
+					"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
+					"address": {"street": req.body.street,
+								 "zipcode": req.body.zipcode,
+								 "building": req.body.building,
+								 "coord": {"lon": req.body.lon, "lat": req.body.lat}
+								}
+					}};
+
+	console.log(req.body.name);
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(null, err);
+		//editRestaurant(db, req.session.userid, req.body.id, req.body.name, req.body.borough, req.body.cuisine, req.body.street, req.body.building, req.body.zipcode, req.body.lon, req.body.lat, req.files.sampleFile, function(result){
+		editRestaurant(db, criteria1, criteria2, function(result){
+				db.close();
+				console.log(result);
+				res.status(200).end('restaurant updated');
+							
+		});
+	});
+
+});
+*/
+
+app.post('/change', function(req,res){
+	var sampleFile;
+	var bfile = req.files.sampleFile;
+	var criteria = {"name": req.body.name, "cuisine": req.body.cuisine, "borough": req.body.borough, "owner": req.session.userid,
+					"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
+					"address": {"street": req.body.street, "zipcode": req.body.zipcode, "building": req.body.building, "coord": {"lon": req.body.lon, "lat": req.body.lat}}};
+	MongoClient.connect(mongourl, function(err, db){
+		assert.equal(null, err);
+
+		db.collection('restaurants').updateOne(
+									{"_id": ObjectId(req.query.id)}, 
+									{$set: {"name": req.body.name, "cuisine": req.body.cuisine, "borough": req.body.borough, "owner": 										req.session.userid,
+									"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
+									"address": {"street": req.body.street, "zipcode": req.body.zipcode, "building": 									req.body.building, "coord": {"lon": req.body.lon, "lat": req.body.lat}}}}, function(err, result) {
+		assert.equal(err, null);
+		//callback(result);
+		//db.close();
+				//res.redirect('/list');
+				res.status(200).end('restaurant updated');
+		});
+		
+	});
+});
+
+
+//*****************************Function for edit restaurnat*************************/
+//function editRestaurant(db,owner,id,name,borough,cuisine,street,building,zipcode,lon,lat,bfile,callback){
+function editRestaurant(db, criteria1, criteria2, callback){
+	console.log(criteria1 + ">>criteria1");
+console.log(criteria2 + ">>criteria2");
+	db.collection('restaurants').updateOne(criteria1, criteria2, function(err, result) {
+		assert.equal(err, null);
+		callback(result);
+	});
+
+/*
+db.collection('restaurants').update({"_id": ObjectId(id)},{$set:{
+		"name": name, "cuisine": cuisine, "borough": borough, "owner": owner,
+					"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
+					"address": {"street": street, "zipcode": zipcode, "building": building, "coord": {"lon": lon, "lat": lat}}
+}}, 
+			function(err,result) {
+				if (err) {
+					result = err;
+					console.log("Update error: " + JSON.stringify(err));
+				}
+				callback(result);
+			}// end function(err,result)
+		);//end insertOne*/
+	}
+
 
 
 //----------------------------Login-----------------------------------------------
@@ -90,6 +315,7 @@ app.post('/login', function(req,res){
 
 //------------------------Register------------------------------------------------
 app.post('/register', function(req,res){
+
 	
 		var criteria = {"userid": req.body.userid};
 		MongoClient.connect(mongourl, function(err, db){
@@ -124,7 +350,7 @@ app.post('/create', function(req,res){
 	var bfile = req.files.sampleFile;
 	var criteria = {"name": req.body.name, "cuisine": req.body.cuisine, "borough": req.body.borough, "owner": req.session.userid,
 					"photo": {"data" : new Buffer(bfile.data).toString('base64'), "mimetype" : bfile.mimetype}, 
-					"address": {"street": req.body.street, "zipcode": req.body.zipcode, "building": req.body.building, "coord": [req.body.lon, req.body.lat]}};
+					"address": {"street": req.body.street, "zipcode": req.body.zipcode, "building": req.body.building, "coord": {"lon": req.body.lon, "lat": req.body.lat}}};
 	MongoClient.connect(mongourl, function(err, db){
 		assert.equal(null, err);
 		createRestaurant(db, criteria, function(result){
@@ -157,8 +383,22 @@ app.post('/create', function(req,res){
 	});
 }*/
 
+/**************************Function for Rating***************************************/
+function findRating(db, criteria, callback){
+	db.collection('rating').find(criteria).toArray(function(err, result){
+		assert.equal(err, null);
+		callback(result);
+	});
+}
 
+/************************Function for find one restaurant****************************/
+function findRest(db, criteria, callback){
+	db.collection('restaurants').find(criteria, function(err, result){
+		assert.equal(err, null);
+		callback(result);
+	});
 
+}
 
 
 

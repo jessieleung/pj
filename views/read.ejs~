@@ -5,7 +5,7 @@
 <p><a href=/create>New</a></p>
 <ol>
   <% c.forEach(function(shop) { %>
-  <li><a href=/display?id=<%= shop._id %>><%= shop.name %></a></li>
+  <li><a href=/display?id=<%= c.id %>><%= c.name %></a></li>
   <% });                        %>
 </ol>
 </BODY></HTML>

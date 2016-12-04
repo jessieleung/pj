@@ -1,0 +1,33 @@
+<HTML>
+
+<head>
+  <title><%= c.name %></title>
+</head>
+<BODY>
+
+
+<H2><%= c.name %></H2>
+
+<% if (c.photo != null) { %>
+<img src="http://localhost:8099/image?key=<%= c._id %>" /> <br/>
+<% } %>
+
+<p>Borough: <%= c.borough %></p>
+<p>Cuisine: <%= c.cuisine %></p>
+<p>Street: <%=c.address.street %></p>
+<p>Building: <%=c.address.building %></p>
+<p>Zipcode: <%=c.address.zipcode %></p>
+<p>GPS: [<%=c.address.coord %>]</p>
+
+
+<p>Created by:<%= c.owner %></p>
+
+
+
+
+
+<p><a href="http://localhost:8099/change?id=<%= c._id %>">Edit</a></p>
+<button type="button" onClick="http://localhost:8099/change?id=<%= c.id %>">Edit</button>
+<p><a href="http://localhost:8099/remove?id=<%= c._id %>">Delete</a></p>
+</BODY>
+</HTML>
